@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Generator Laporan Kegiatan</title>
+
+    <!-- CSS Layout -->
+    <style>
+        body {
+            font-family: "Arial", sans-serif;
+            background: #e9e9e9;
+            padding: 30px;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+        }
+
+        button {
+            background: #1976d2;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0d47a1;
+        }
+
+        /* AREA PREVIEW A4 */
+        #preview {
+            width: 794px;
+            min-height: 1123px;
+            padding: 40px 60px;
+            margin: 50px auto;
+            background: white;
+            border: 1px solid #ccc;
+            text-align: justify;
+            line-height: 1.6;
+        }
+
+        .judul-laporan {
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .ttd {
+            margin-top: 60px;
+            text-align: right;
+        }
+
+        canvas {
+            border: 1px solid #333;
+            margin-top: 10px;
+        }
+
+    </style>
+
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+    <h2 style="text-align:center;">FORM LAPORAN KEGIATAN</h2>
+
+    <label>Nama Acara</label>
+    <input id="acara">
+
+    <label>Hari / Tanggal</label>
+    <input id="tanggal" type="date">
+
+    <label>Waktu</label>
+    <input id="waktu" placeholder="13.00 Wita s/d selesai">
+
+    <label>Tempat</label>
+    <input id="tempat">
+
+    <label>Jenis Kegiatan</label>
+    <input id="jenis">
+
+    <label>Rencana Aksi</label>
+    <input id="renaksi">
+
+    <label>Penjelasan Kegiatan</label>
+    <textarea id="penjelasan" rows="4"></textarea>
+
+    <label>Kesimpulan</label>
+    <textarea id="kesimpulan" rows="3"></textarea>
+
+    <label>Foto Kegiatan</label>
+    <input id="foto" type="file" accept="image/*">
+
+    <hr>
+
+    <h3>Tanda Tangan Digital</h3>
+    <canvas id="canvas" width="300" height="150"></canvas><br>
+    <button onclick="clearCanvas()" style="margin-top:10px;">Bersihkan TTD</button>
+
+    <label>Nama Notulen</label>
+    <input id="namaTTD" placeholder="Masukkan nama lengkap">
+
+    <label>Jabatan</label>
+    <input id="jabatanTTD" placeholder="Masukkan jabatan">
+
+    <br><br>
+
+    <button onclick="generatePreview()">Preview</button>
+    <button onclick="exportPDF()">Export ke PDF</button>
+    <button onclick="uploadToDrive()">Auto-Save ke Google Drive</button>
+
+    <div id="preview"></div>
+</div>
+
+<script>
+function generatePreview() {
+    const acara = document.getElementById("acara").value;
+   // Format tanggal menjadi: 12 November 2025
+const rawTanggal = document.getElementById("tanggal").value;
+const dateObj = new Date(rawTanggal);
+
+const bulanIndo = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+const tanggal = dateObj.getDate() + " " +
+                bulanIndo[dateObj.getMonth()] + " " +
+                dateObj.getFullYear();
+
+    const waktu = document.getElementById("waktu").value;
+    const tempat = document.getElementById("tempat").value;
+    const jenis = document.getElementById("jenis").value;
+    const renaksi = document.getElementById("renaksi").value;
+    const penjelasan = document.getElementById("penjelasan").value;
+    const kesimpulan = document.getElementById("kesimpulan").value;
+
+    const namaTTD = document.getElementById("namaTTD").value;
+    const jabatanTTD = document.getElementById("jabatanTTD").value;
+
+    const fotoFile = document.getElementById("foto").files[0];
+    let fotoHTML = "";
+    if (fotoFile) {
+        const url = URL.createObjectURL(fotoFile);
+        fotoHTML = `<img src="${url}" width="100%" style="margin-top:20px; border:1px solid #bbb;">`;
+    }
+
+    document.getElementById("preview").innerHTML = `
+        <div class="judul-laporan">LAPORAN KEGIATAN</div>
+
+        <table style="width:100%; line-height:1.8;">
+            <tr><td style="width:200px;"><b>Acara Kegiatan</b></td><td>: ${acara}</td></tr>
+            <tr><td><b>Hari / Tanggal</b></td><td>: ${tanggal}</td></tr>
+            <tr><td><b>Pukul</b></td><td>: ${waktu}</td></tr>
+            <tr><td><b>Tempat</b></td><td>: ${tempat}</td></tr>
+            <tr><td><b>Jenis Kegiatan</b></td><td>: ${jenis}</td></tr>
+            <tr><td><b>Rencana Aksi</b></td><td>: ${renaksi}</td></tr>
+        </table>
+
+        <br><br>
+        <b>Penjelasan Kegiatan:</b>
+        <p>${penjelasan}</p>
+
+        <br>
+        <b>Kesimpulan:</b>
+        <p>${kesimpulan}</p>
+
+        <br><br>
+        <b>Foto Kegiatan:</b><br>
+        ${fotoHTML}
+
+        <div class="ttd">
+            <p><b>Denpasar, ${tanggal}</b></p>
+            <p><b>${jabatanTTD}</b></p>
+            <img src="${canvas.toDataURL()}" width="200"><br><br>
+            <b><u>${namaTTD}</u></b><br>
+        </div>
+    `;
+}
+
+// ---- Digital TTD ----
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let drawing = false;
+
+canvas.addEventListener("mousedown", () => drawing = true);
+canvas.addEventListener("mouseup", () => { drawing = false; ctx.beginPath(); });
+canvas.addEventListener("mousemove", draw);
+
+function draw(e) {
+    if (!drawing) return;
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#000";
+
+    const r = canvas.getBoundingClientRect();
+    ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ---- Export PDF ----
+async function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "pt", "a4");
+
+    await html2canvas(document.getElementById("preview")).then(canvas => {
+        const img = canvas.toDataURL("image/png");
+        pdf.addImage(img, "PNG", 0, 0, 595, 842);
+        pdf.save("LaporanKegiatan.pdf");
+    });
+}
+
+function uploadToDrive() {
+    alert("⚠️ Masukkan CLIENT ID, API KEY & FOLDER ID Google Drive untuk mengaktifkan fitur ini.");
+}
+</script>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+</body>
+</html>
